@@ -30,7 +30,7 @@ Une API REST complète pour une application de gestion de tâches avec authentif
 ## 🚀 Installation et démarrage
 
 ### Prérequis
-- Node.js (v14+)
+- Node.js(React,ExpressJS)(latest)
 - MongoDB (v4.4+)
 - npm ou yarn
 
