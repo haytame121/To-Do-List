@@ -9,6 +9,7 @@ const MongoStore = require('connect-mongo');
 // Import des routes
 const authRoutes = require('./routes/authRoutes');
 const todoRoutes = require('./routes/todoRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Import des middlewares
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -22,7 +23,9 @@ app.use(helmet({
 
 // CORS
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? ['http://localhost:2000', 'http://localhost:3001'] : ['http://localhost:2000', 'http://localhost:3001'],
+    origin: process.env.NODE_ENV === 'production'
+        ? ['http://localhost:2000', 'http://localhost:3001']
+        : ['http://localhost:2000', 'http://localhost:3001', 'http://localhost:5173'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -61,6 +64,7 @@ app.get('/api/health', (req, res) => {
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/todos', todoRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Redirections pour compatibilité (routes raccourcies)
 app.post('/register', (req, res) => {
@@ -69,6 +73,14 @@ app.post('/register', (req, res) => {
 
 app.post('/login', (req, res) => {
     res.redirect(307, '/api/auth/login');
+});
+
+app.get('/profile', (req, res) => {
+    res.redirect(301, '/api/auth/profile');
+});
+
+app.put('/profile', (req, res) => {
+    res.redirect(307, '/api/auth/profile');
 });
 
 // Middleware de logging pour le développement (après les routes)

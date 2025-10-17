@@ -4,15 +4,15 @@ const User = require('../models/user');
 const authMiddleware = async (req, res, next) => {
     try {
         // Vérifier le token dans les headers Authorization
-        const authHeader = req.headers.authorization;
-        const token = authHeader && authHeader.startsWith('Bearer ') 
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+        const token = authHeader && authHeader.startsWith("Bearer ") 
             ? authHeader.substring(7) 
             : null;
 
         if (!token) {
             return res.status(401).json({ 
                 success: false,
-                message: 'Token d\'accès requis' 
+                message: "Token d'accès requis" 
             });
         }
 
@@ -20,11 +20,11 @@ const authMiddleware = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         // Vérifier que l'utilisateur existe toujours
-        const user = await User.findById(decoded.userId).select('-password');
+        const user = await User.findById(decoded.userId).select("-password");
         if (!user || !user.isActive) {
             return res.status(401).json({ 
                 success: false,
-                message: 'Utilisateur non trouvé ou inactif' 
+                message: "Utilisateur non trouvé ou inactif" 
             });
         }
 
@@ -36,19 +36,19 @@ const authMiddleware = async (req, res, next) => {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ 
                 success: false,
-                message: 'Token invalide' 
+                message: "Token invalide" 
             });
         } else if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ 
                 success: false,
-                message: 'Token expiré' 
+                message: "Token expiré" 
             });
         }
         
         console.error('Erreur auth middleware:', error);
         return res.status(500).json({ 
             success: false,
-            message: 'Erreur serveur lors de l\'authentification' 
+            message: "Erreur serveur lors de l'authentification" 
         });
     }
 };
@@ -56,14 +56,14 @@ const authMiddleware = async (req, res, next) => {
 // Middleware optionnel pour les routes publiques
 const optionalAuth = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
-        const token = authHeader && authHeader.startsWith('Bearer ') 
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+        const token = authHeader && authHeader.startsWith("Bearer ") 
             ? authHeader.substring(7) 
             : null;
 
         if (token) {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await User.findById(decoded.userId).select('password');
+            const user = await User.findById(decoded.userId).select("-password");
             if (user && user.isActive) {
                 req.user = user;
                 req.userId = user._id;
@@ -77,3 +77,15 @@ const optionalAuth = async (req, res, next) => {
 };
 
 module.exports = { authMiddleware, optionalAuth };
+// Middleware pour restreindre aux admins
+module.exports.adminOnly = async (req, res, next) => {
+    try {
+        if (!req.user) return res.status(401).json({ success: false, message: 'Non authentifié' });
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Accès réservé aux administrateurs' });
+        }
+        next();
+    } catch (e) {
+        return res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+};
